@@ -42,6 +42,7 @@ const j = (r) => r.json()
 {
   const r = await fetch(BASE + '/api/digest').then(j)
   check('digest: 3 lines', Array.isArray(r.lines) && r.lines.length === 3)
+  check('digest: mock mode flagged honestly', r.mode === 'mock')
 }
 
 // reply: accepted, not delivered in mock mode (no token), never throws

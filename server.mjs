@@ -39,6 +39,22 @@ const mockDigest = [
   'Product Team (9 msgs): iOS crash fix merged, release tomorrow.',
 ]
 
+// /start and /help onboarding reply: a guided first run, honest about scope.
+const welcomeText = [
+  'Welcome to Glance - Telegram at a glance on Even G2 glasses.',
+  '',
+  'How it works:',
+  '1. Send or forward any message to this bot; it appears on your glasses as a VIP card.',
+  '2. On the glasses: tap to skip, double-tap to reply with the suggested draft, hold to reply by voice.',
+  '3. Swipe for smart actions (reminders) and the channel digest.',
+  '',
+  'Honest notes:',
+  '- A forwarded message shows its original author and is labeled Forwarded; a reply to it comes back to this chat, not the original one.',
+  '- Message contents live in memory only and are never stored.',
+  '',
+  'Try it now: forward any message to me.',
+].join('\n')
+
 // live telegram state (in-memory only)
 const liveQueue = []           // GlanceMessage items from Telegram
 const byId = new Map()         // id -> {chatId}
@@ -99,7 +115,10 @@ async function telegramLoop() {
       const updates = await tg('getUpdates', { offset: tgOffset, timeout: 25 })
       for (const u of updates) {
         tgOffset = u.update_id + 1
-        if (u.message && u.message.text && !u.message.text.startsWith('/')) {
+        if (u.message && typeof u.message.text === 'string' && (u.message.text.startsWith('/start') || u.message.text.startsWith('/help'))) {
+          tg('sendMessage', { chat_id: u.message.chat.id, text: welcomeText })
+            .catch(e => console.error('welcome send:', e.message))
+        } else if (u.message && u.message.text && !u.message.text.startsWith('/')) {
           liveQueue.push(toGlance(u.message))
           if (liveQueue.length > 20) liveQueue.shift()
         }
@@ -159,7 +178,14 @@ const server = http.createServer(async (req, res) => {
       const messages = BOT_TOKEN ? liveQueue.slice() : mockMessages
       return json(200, { messages, filtered: 3, mode: BOT_TOKEN ? 'telegram' : 'mock' })
     }
-    if (req.url === '/api/digest' && req.method === 'GET') return json(200, { lines: mockDigest })
+    if (req.url === '/api/digest' && req.method === 'GET') {
+      if (!BOT_TOKEN) return json(200, { lines: mockDigest, mode: 'mock' })
+      // live mode: digest of what actually arrived this session, grouped by chat
+      const counts = new Map()
+      for (const m of liveQueue) counts.set(m.chat, (counts.get(m.chat) || 0) + 1)
+      const lines = [...counts.entries()].map(([chat, n]) => `${chat}: ${n} message${n === 1 ? '' : 's'} this session`)
+      return json(200, { lines: lines.length ? lines : ['Nothing yet this session - send or forward a message to the bot.'], mode: 'telegram' })
+    }
     if (req.url === '/api/reply' && req.method === 'POST') {
       const body = JSON.parse(await readBody(req))
       if (BOT_TOKEN && byId.has(body.id)) await tg('sendMessage', { chat_id: byId.get(body.id), text: body.text })

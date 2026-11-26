@@ -15,11 +15,11 @@ Result on 26 Nov 2026: passes. `dist/` builds clean, 6 modules, ~92 kB JS (~37 k
 node test-backend.mjs
 ```
 
-Spawns `server.mjs` in mock mode on a random port and checks 16 things:
-health flags, queue shape and VIP flags, 300-char body cap, digest, reply
-accepted-without-delivery in mock mode, honest STT backend flagging, 404 on
-unknown routes, 500-with-error on malformed JSON, and server survival after a
-bad request. Result on 26 Nov 2026: 16 passed, 0 failed.
+Spawns `server.mjs` in mock mode on a random port and checks 17 things:
+health flags, queue shape and VIP flags, 300-char body cap, digest lines and
+its honest mode flag, reply accepted-without-delivery in mock mode, honest STT
+backend flagging, 404 on unknown routes, 500-with-error on malformed JSON, and
+server survival after a bad request. Result on 26 Nov 2026: 17 passed, 0 failed.
 
 ## 3. Packaged app (.ehpk)
 
@@ -52,5 +52,6 @@ video and on the landing page.
 - Real G2 hardware (no device on the team; the hackathon explicitly allows
   simulator-only builds).
 - Live Telegram round-trip in CI (needs a bot token and a human DM; demoed in
-  the video instead).
+  the video instead). The /start and /help onboarding reply is bot-side and is
+  covered the same way: code path reviewed, not asserted in CI.
 - On-device microphone latency for voice replies.

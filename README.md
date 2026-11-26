@@ -49,6 +49,20 @@ The Bot API cannot read a user's inbox. What reaches the glasses today:
   a reply to a forwarded card goes back to your bot DM, not the original chat)
 Full inbox sync needs the Telegram user API and is on the roadmap, not claimed here.
 
+Guided onboarding: the bot answers /start and /help with a short walkthrough (send or
+forward a message -> it lands on the glasses; gestures; honest notes about forwarding and
+privacy), so a first-time user is never dropped into silence.
+
+Digest is real output, not a mockup. In live mode /api/digest summarizes what actually
+arrived this session, grouped by chat, e.g.:
+```
+{"lines":["Product Team: 3 messages this session","Forwarded: 1 message this session"],"mode":"telegram"}
+```
+In demo mode (no BOT_TOKEN) the endpoint returns sample lines and says so:
+```
+{"lines":["Crypto News ID (14 msgs): sideways market, no major news; L2 gas down.", ...],"mode":"mock"}
+```
+
 ## Status
 Submitted to the hackathon (build 52017, under review; editable until Nov 30).
 - Build page: https://dorahacks.io/build/52017
@@ -57,4 +71,4 @@ Submitted to the hackathon (build 52017, under review; editable until Nov 30).
 - Packaged app (.ehpk): see GitHub Releases
 Tested on the official simulator 0.9.5 via its automation API: queue, draft replies,
 voice -> STT -> send (HTTP end-to-end), smart actions, digest, error path. Zero console errors.
-Backend endpoint suite: `node test-backend.mjs` (16 checks, no keys needed). See TESTING.md.
+Backend endpoint suite: `node test-backend.mjs` (17 checks, no keys needed). See TESTING.md.
