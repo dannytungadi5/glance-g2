@@ -64,7 +64,7 @@ function toGlance(msg) {
     id, sender, chat: msg.chat.type === 'private' ? 'DM' : (msg.chat.title || msg.chat.type),
     time: t.toTimeString().slice(0, 5), vip: true, kind: msg.chat.type === 'private' ? 'dm' : 'group',
     body: String(msg.text || '').slice(0, 300),
-    draftReply: 'Got it, received. (simple draft — LLM drafts coming)',
+    draftReply: 'Got it, I will get back to you in a bit.',
   }
 }
 
