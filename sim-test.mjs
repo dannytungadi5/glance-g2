@@ -6,14 +6,12 @@ async function shot(name) {
   fs.writeFileSync('shots/' + name + '.png', Buffer.from(await r.arrayBuffer()))
   console.log('shot', name)
 }
-async function input(action, wait = 600) {
+async function input(action, wait = 1800) {
   await fetch(BASE + '/api/input', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action }) })
   await sleep(wait)
 }
 for (let i = 0; i < 20; i++) { try { await fetch(BASE + '/api/ping'); break } catch { await sleep(500) } }
 await sleep(4000)
-await shot('50-en-queue')
-await input('click'); await input('double_click'); await shot('51-en-confirm'); await input('down')
-await input('up'); await shot('52-en-reminder')   // m2 has no reminder; but swipe up on m2... m2 no day/time -> noop; go m1
+await input('down'); await shot('en-digest')
 const c = JSON.parse(await (await fetch(BASE + '/api/console')).text())
 console.log('console errors:', c.entries.filter(e => e.level === 'error').length)

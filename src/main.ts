@@ -204,8 +204,8 @@ function pcmToWav(chunks: Uint8Array[], rate = 16000): Uint8Array {
 // Rule-based contextual action detection (LLM version lives on the backend later).
 // Returns null when the message has no useful micro-action.
 function detectAction(m: GlanceMessage): SmartAction | null {
-  const time = m.body.match(/(?:jam|pukul)\s*(\d{1,2}(?:[.:]\d{2})?)/i)
-  const day = /besok|lusa|hari|senin|selasa|rabu|kamis|jum'?at|sabtu|minggu|\d{1,2}[\/\-]\d{1,2}/i.test(m.body)
+  const time = m.body.match(/(?:jam|pukul|at)\s*(\d{1,2}(?:[.:]\d{2})?(?:\s*[ap]m)?)/i)
+  const day = /besok|lusa|hari|senin|selasa|rabu|kamis|jum'?at|sabtu|minggu|tomorrow|tonight|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d{1,2}[\/\-]\d{1,2}/i.test(m.body)
   if (time && day) {
     return {
       kind: 'reminder',

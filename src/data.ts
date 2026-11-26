@@ -21,34 +21,34 @@ export interface Backend {
 
 export const MOCK_MESSAGES: GlanceMessage[] = [
   {
-    id: 'm1', sender: 'Dina', chat: 'Keluarga', time: '20:12', vip: true, kind: 'group',
-    body: 'Besok jadi kan makan di rumah Ibu jam 12? Aku bawa kue.',
-    draftReply: 'Jadi, sampai sana sebelum jam 12.',
+    id: 'm1', sender: 'Dina', chat: 'Family', time: '20:12', vip: true, kind: 'group',
+    body: 'Lunch at Mom\'s tomorrow at 12 still on? I\'m bringing cake.',
+    draftReply: 'Yes, I\'ll be there before 12.',
   },
   {
-    id: 'm2', sender: 'Rafi (PM)', chat: 'Tim Produk', time: '20:05', vip: true, kind: 'group',
-    body: 'Build iOS yang tadi crash sudah kufix. Tolong cek TestFlight malam ini ya.',
-    draftReply: 'Siap, aku cek TestFlight malam ini.',
+    id: 'm2', sender: 'Rafi (PM)', chat: 'Product Team', time: '20:05', vip: true, kind: 'group',
+    body: 'Fixed the iOS build that was crashing. Please check TestFlight tonight.',
+    draftReply: 'On it, I\'ll check TestFlight tonight.',
   },
   {
     id: 'm3', sender: 'Watchbot', chat: 'Alerts', time: '19:58', vip: false, kind: 'watchbot',
-    body: 'Polymarket: "BTC di atas 100k akhir 2026" naik ke 62% (+5 dalam 2 jam). Volume 24j: $1,2M.',
+    body: 'Polymarket: "BTC above 100k by end of 2026" up to 62% (+5 in 2h). 24h volume: $1.2M.',
   },
   {
-    id: 'm4', sender: 'Pak Herman', chat: 'DM', time: '19:40', vip: true, kind: 'dm',
-    body: 'Dokumen kontrak revisi sudah saya kirim ke email. Kalau ada yang perlu diubah, kabari saja.',
-    draftReply: 'Baik Pak, saya cek emailnya dan kabari kalau ada revisi.',
+    id: 'm4', sender: 'Mr. Herman', chat: 'DM', time: '19:40', vip: true, kind: 'dm',
+    body: 'The revised contract is in your email. Let me know if anything needs changing.',
+    draftReply: 'Got it, I\'ll review and let you know.',
   },
   {
     id: 'm5', sender: 'Crypto News ID', chat: 'Channel', time: '19:22', vip: false, kind: 'channel',
-    body: 'Ringkasan sore: funding rate normal, dominasi BTC stabil, gas fee L2 turun minggu ini.',
+    body: 'Evening brief: funding rates normal, BTC dominance stable, L2 gas fees down this week.',
   },
 ]
 
 export const MOCK_DIGEST: string[] = [
-  'Crypto News ID (14 pesan): pasar sideways, tidak ada berita besar; gas L2 turun.',
-  'Komunitas Builder (31 pesan): bahas hackathon minggu ini, 2 link tutorial.',
-  'Tim Produk (9 pesan): fix crash iOS sudah merge, rilis besok.',
+  'Crypto News ID (14 msgs): sideways market, no major news; L2 gas down.',
+  'Builder Community (31 msgs): this week\'s hackathon talk, 2 tutorial links.',
+  'Product Team (9 msgs): iOS crash fix merged, release tomorrow.',
 ]
 
 export class MockBackend implements Backend {
