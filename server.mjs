@@ -3,14 +3,22 @@
 //   default            mock data (demo / simulator testing)
 //   BOT_TOKEN=xxx      live Telegram Bot API: DMs to the bot become queue items,
 //                      replies from glasses are sent back via sendMessage.
-//   GEMINI_API_KEY=xx  /api/stt transcribes real WAV via Gemini (free tier);
-//                      without it, /api/stt returns a mock transcript.
+//   GEMINI_API_KEY=xx  /api/stt transcribes real WAV via Gemini (free tier)
+//   WHISPER=1          /api/stt transcribes locally via faster-whisper (stt.py)
+//   SAMPLE_WAV=path    demo mode: transcribe this file instead of the posted audio
+//                      (the headless simulator has no microphone; the STT pipeline
+//                      itself is real)
+//   without any of these, /api/stt returns a mock transcript.
 // Privacy: message contents are kept in memory only, never written to disk.
 import http from 'node:http'
+import { execFile } from 'node:child_process'
+import { writeFile, unlink } from 'node:fs/promises'
 
 const PORT = process.env.PORT || 8787
 const BOT_TOKEN = process.env.BOT_TOKEN || ''
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
+const WHISPER = process.env.WHISPER === '1'
+const SAMPLE_WAV = process.env.SAMPLE_WAV || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash'
 
 const mockMessages = [
@@ -93,6 +101,26 @@ async function sttGemini(wav) {
   return text.trim()
 }
 
+async function sttWhisper(wav) {
+  let file = SAMPLE_WAV
+  if (!file) {
+    file = `/tmp/glance-stt-${Date.now()}.wav`
+    await writeFile(file, wav)
+  }
+  try {
+    const text = await new Promise((resolve, reject) => {
+      execFile('python3', ['stt.py', file], { cwd: new URL('.', import.meta.url).pathname, timeout: 60000 }, (err, stdout, stderr) => {
+        if (err) return reject(new Error('whisper: ' + (stderr || err.message).slice(0, 200)))
+        const t = stdout.trim()
+        t ? resolve(t) : reject(new Error('whisper: empty transcript'))
+      })
+    })
+    return text
+  } finally {
+    if (!SAMPLE_WAV) unlink(file).catch(() => {})
+  }
+}
+
 function cors(res) {
   res.setHeader('access-control-allow-origin', '*')
   res.setHeader('access-control-allow-methods', 'GET,POST,OPTIONS')
@@ -118,9 +146,10 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/api/stt' && req.method === 'POST') {
       const wav = await readBody(req, true)
       if (GEMINI_API_KEY && wav.length > 100) return json(200, { text: await sttGemini(wav), stt: 'gemini' })
+      if (WHISPER && (wav.length > 100 || SAMPLE_WAV)) return json(200, { text: await sttWhisper(wav), stt: SAMPLE_WAV ? 'whisper-sample' : 'whisper' })
       return json(200, { text: 'OK, I\'ll update you after lunch. (mock STT)', stt: 'mock' })
     }
-    if (req.url === '/api/health') return json(200, { ok: true, telegram: !!BOT_TOKEN, gemini: !!GEMINI_API_KEY })
+    if (req.url === '/api/health') return json(200, { ok: true, telegram: !!BOT_TOKEN, gemini: !!GEMINI_API_KEY, whisper: WHISPER })
     json(404, { error: 'not found' })
   } catch (e) { console.error(e); json(500, { error: e.message }) }
 })
