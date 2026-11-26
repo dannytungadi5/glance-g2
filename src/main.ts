@@ -16,8 +16,44 @@ type Screen =
   | { name: 'voice'; msg: GlanceMessage }
   | { name: 'action'; msg: GlanceMessage; action: SmartAction }
 
-const apiBase = new URLSearchParams(location.search).get('api')
+const params = new URLSearchParams(location.search)
+const apiBase = params.get('api')
+const LANG = (params.get('lang') || 'en') as 'en' | 'id'
 const backend = apiBase ? new HttpBackend(apiBase) : new MockBackend()
+
+// English is the default (judges); Indonesian available via ?lang=id
+const T = {
+  en: {
+    sendQ: 'SEND REPLY?', to: 'to', voice: 'VOICE REPLY', recording: 'Recording. Speak now,\nrelease to transcribe.',
+    digest: 'CHANNEL DIGEST', loading: 'Summarizing channels...', done: 'ALL CLEAR',
+    emptyA: 'Queue is clear.', emptyB: 'other messages filtered (not VIP).',
+    transcribing: '...transcribing', sttFail: '!! STT failed. Retype on your phone or try again.',
+    sendFail: '!! Send failed. Try again.',
+    footQ: 'tap skip · 2x reply · hold voice · swipe: action / digest',
+    footC: 'tap SEND · swipe cancel', footD: 'tap back', footV: 'release to send',
+    footA: 'tap run · swipe cancel', footE: 'swipe down digest · 2x exit',
+    remind: 'REMIND ME', summarize: 'SUMMARIZE', market: 'MARKET DETAIL',
+    remindTxt: (b: string, t: string) => `Remind me about this:\n"${b}"\n\nDetected: around ${t}.`,
+    summarizeTxt: 'Link summary, 3 points:\n1. (mock) Main point.\n2. Supporting data.\n3. Conclusion.',
+    disclaimer: 'Not financial advice.',
+    detailHdr: 'Market detail (read-only):',
+  },
+  id: {
+    sendQ: 'KIRIM BALASAN?', to: 'ke', voice: 'BALAS SUARA', recording: 'Merekam. Bicara sekarang,\nlepas tombol untuk ubah ke teks.',
+    digest: 'DIGEST CHANNEL', loading: 'Meringkas channel...', done: 'SELESAI',
+    emptyA: 'Antrean bersih.', emptyB: 'pesan lain difilter (bukan VIP).',
+    transcribing: '...mengubah suara ke teks', sttFail: '!! STT gagal. Ketik ulang lewat HP atau coba lagi.',
+    sendFail: '!! Gagal kirim. Coba lagi.',
+    footQ: 'tap lewati · 2x balas · tahan suara · geser: aksi / digest',
+    footC: 'tap KIRIM · geser batal', footD: 'tap kembali', footV: 'lepas untuk mengirim',
+    footA: 'tap jalankan · geser batal', footE: 'geser bawah digest · 2x keluar',
+    remind: 'INGATKAN', summarize: 'RINGKAS', market: 'DETAIL PASAR',
+    remindTxt: (b: string, t: string) => `Ingatkan aku soal ini:\n"${b}"\n\nTerdeteksi: sekitar jam ${t}.`,
+    summarizeTxt: 'Ringkasan 3 poin dari tautan:\n1. (mock) Poin utama artikel.\n2. Data pendukung.\n3. Kesimpulan.',
+    disclaimer: 'Bukan saran finansial.',
+    detailHdr: 'Detail pasar (read-only):',
+  },
+}[LANG]
 let pcmChunks: Uint8Array[] = []
 let queue: GlanceMessage[] = []
 let index = 0
@@ -51,11 +87,11 @@ function foot(text: string) {
   })
 }
 
-const FOOT_QUEUE = 'tap lewati · 2x balas · tahan suara · geser: aksi / digest'
-const FOOT_CONFIRM = 'tap KIRIM · geser batal'
-const FOOT_DIGEST = 'tap kembali'
-const FOOT_VOICE = 'lepas untuk mengirim'
-const FOOT_ACTION = 'tap jalankan · geser batal'
+const FOOT_QUEUE = T.footQ
+const FOOT_CONFIRM = T.footC
+const FOOT_DIGEST = T.footD
+const FOOT_VOICE = T.footV
+const FOOT_ACTION = T.footA
 
 function short(text: string, n: number) {
   const t = text.replace(/\n+/g, ' ').trim()
@@ -67,26 +103,26 @@ function view(): { h: string; b: string; f: string } {
     const m = screen.msg
     const draft = m.draftReply ?? '(tidak ada draft)'
     return {
-      h: `KIRIM BALASAN?`,
-      b: `ke ${m.sender} (${m.chat}):\n"${short(m.body, 70)}"\n\n${draft}`,
+      h: T.sendQ,
+      b: `${T.to} ${m.sender} (${m.chat}):\n"${short(m.body, 70)}"\n\n${draft}`,
       f: FOOT_CONFIRM,
     }
   }
   if (screen.name === 'voice') {
     return {
-      h: `BALAS SUARA`,
-      b: `ke ${m0(screen)}...\n\nMerekam. Bicara sekarang,\nlepas tombol untuk ubah ke teks.`,
+      h: T.voice,
+      b: `${T.to} ${m0(screen)}...\n\n${T.recording}`,
       f: FOOT_VOICE,
     }
   }
   if (screen.name === 'digest') {
-    return { h: 'DIGEST CHANNEL', b: digestLines.join('\n\n'), f: FOOT_DIGEST }
+    return { h: T.digest, b: digestLines.join('\n\n'), f: FOOT_DIGEST }
   }
   if (screen.name === 'action') {
     return { h: screen.action.label, b: screen.action.detail, f: FOOT_ACTION }
   }
   if (queue.length === 0) {
-    return { h: 'SELESAI', b: `Antrean bersih.\n\n${backend.filteredCount()} pesan lain difilter (bukan VIP).`, f: 'geser bawah digest · 2x keluar' }
+    return { h: T.done, b: `${T.emptyA}\n\n${backend.filteredCount()} ${T.emptyB}`, f: T.footE }
   }
   const m = queue[index]
   const vip = m.vip ? '*' : ''
@@ -134,12 +170,12 @@ async function sendDraft() {
     next()
   } catch {
     // error state: stay on the draft, tell the user, allow retry
-    screen.msg.draftReply = `!! Gagal kirim. Coba lagi.\n\n${screen.msg.draftReply}`
+    screen.msg.draftReply = `${T.sendFail}\n\n${screen.msg.draftReply}`
   } finally { sending = false }
 }
 
 async function openDigest() {
-  digestLines = ['Meringkas channel...']
+  digestLines = [T.loading]
   screen = { name: 'digest' }
   await render()
   digestLines = await backend.fetchDigest()
@@ -173,22 +209,22 @@ function detectAction(m: GlanceMessage): SmartAction | null {
   if (time && day) {
     return {
       kind: 'reminder',
-      label: 'INGATKAN',
-      detail: `Ingatkan aku soal ini:\n"${m.body.slice(0, 90)}"\n\nTerdeteksi: sekitar jam ${time[1]}.`,
+      label: T.remind,
+      detail: T.remindTxt(m.body.slice(0, 90), time[1]),
     }
   }
   if (/https?:\/\/|www\./i.test(m.body)) {
     return {
       kind: 'summarize',
-      label: 'RINGKAS',
-      detail: 'Ringkasan 3 poin dari tautan:\n1. (mock) Poin utama artikel.\n2. Data pendukung.\n3. Kesimpulan.',
+      label: T.summarize,
+      detail: T.summarizeTxt,
     }
   }
   return null
 }
 
 function watchbotDetail(m: GlanceMessage): string {
-  return `${m.body}\n\n---\nDetail pasar (read-only):\nOdds: 62% (+5)\nVolume 24j: $1,2M\nLikuiditas: $340k\n\nBukan saran finansial.`
+  return `${m.body}\n\n---\n${T.detailHdr}\nOdds: 62% (+5)\nVolume 24h: $1.2M\nLiquidity: $340k\n\n${T.disclaimer}`
 }
 
 // CLICK_EVENT is 0 and protobuf omits zero fields, so a tap arrives with
@@ -239,12 +275,12 @@ bridge.onEvenHubEvent(event => {
       const wav = pcmToWav(pcmChunks)
       pcmChunks = []
       // PCM -> backend STT -> transcript becomes the draft for confirmation
-      msg.draftReply = '...mengubah suara ke teks'
+      msg.draftReply = T.transcribing
       screen = { name: 'confirm', msg }
       void render()
       backend.transcribe(wav)
         .then(text => { msg.draftReply = text; if (screen.name === 'confirm') void render() })
-        .catch(() => { msg.draftReply = '!! STT gagal. Ketik ulang lewat HP atau coba lagi.'; if (screen.name === 'confirm') void render() })
+        .catch(() => { msg.draftReply = T.sttFail; if (screen.name === 'confirm') void render() })
     }
     return
   }
@@ -259,7 +295,7 @@ bridge.onEvenHubEvent(event => {
     if (screen.name === 'queue' && queue.length) {
       const m = queue[index]
       if (m.kind === 'watchbot') {
-        screen = { name: 'action', msg: m, action: { kind: 'summarize', label: 'DETAIL PASAR', detail: watchbotDetail(m) } }
+        screen = { name: 'action', msg: m, action: { kind: 'summarize', label: T.market, detail: watchbotDetail(m) } }
         void render(); return
       }
       const act = detectAction(m)

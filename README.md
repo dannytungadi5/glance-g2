@@ -1,47 +1,48 @@
-# Glance — Telegram, sekilas saja, di kacamata Even G2
+# Glance — Telegram at a glance, on Even G2 glasses
 
-Heads Up: Even Realities Hackathon 2026 (dibangun setelah kickoff 23 Nov).
-Track utama: Messaging & News · Track kedua: Crypto & DeFi (watchbot) · Kandidat Best Telegram Integration.
+Heads Up: Even Realities Hackathon 2026 (built after the Nov 23 kickoff).
+Main track: Messaging & News · Second track: Crypto & DeFi (watchbot) · Best Telegram Integration candidate.
 
-## Konsep
-Glance menyaring Telegram, bukan meneruskannya. Hanya pesan dari chat/orang/kata kunci VIP
-yang tampil di G2, satu kartu per pesan. Gestur: tap = lewati/kirim, double-tap = draft balasan
-AI, tahan = balas suara (PCM mic G2 -> WAV -> STT -> konfirmasi -> kirim), swipe atas = aksi
-pintar kontekstual (jadwal -> ingatkan, link -> ringkas), swipe bawah = digest channel.
+## Concept
+Glance filters Telegram instead of forwarding it. Only messages from VIP chats, people, and
+keywords reach your G2, one card per message. Gestures: tap = skip/send, double-tap = AI draft
+reply, hold = voice reply (G2 mic PCM -> WAV -> STT -> confirm -> send), swipe up = contextual
+smart action (schedule -> reminder, link -> summary), swipe down = channel digest.
 
-## Arsitektur
+## Architecture
 ```
-G2 <--BLE--> Even Hub app (WebView) --> plugin ini (Vite + TS + even_hub_sdk 0.0.16)
+G2 <--BLE--> Even Hub app (WebView) --> this plugin (Vite + TS + even_hub_sdk 0.0.16)
                                           |
-                                    ?api=http://server:8787   (opsional; default mock lokal)
+                                    ?api=http://server:8787   (optional; local mock by default)
                                           |
-                                   server.mjs (node, zero-dep)
-                                     - BOT_TOKEN       -> Telegram Bot API (DM masuk -> antrean, balasan -> sendMessage)
-                                     - GEMINI_API_KEY  -> /api/stt transkripsi WAV (free tier); tanpa key: mock
+                                   server.mjs (node, zero dependencies)
+                                     - BOT_TOKEN       -> Telegram Bot API (bot DMs -> queue, replies -> sendMessage)
+                                     - GEMINI_API_KEY  -> /api/stt WAV transcription (free tier); mock without it
 ```
-API key tidak pernah ada di kacamata/plugin (aturan hackathon). Isi pesan hanya di memori.
+API keys never live in the glasses plugin (hackathon rule). Message contents are in-memory only.
 
-## Menjalankan
+## Run
 ```
 npm install
-node server.mjs &                 # opsional; mock-over-HTTP
+node server.mjs &                 # optional; mock-over-HTTP
 npm run dev
 npx evenhub-simulator 'http://localhost:5173/?api=http://127.0.0.1:8787'
 ```
-Tes otomatis end-to-end (simulator + backend + semua gestur, simpan screenshot ke shots/):
-`./run-sim-test.sh` — di Linux headless butuh Xvfb + webkit2gtk-4.1 + proot (lihat skrip).
+Automated end-to-end test (simulator + backend + every gesture, screenshots to shots/):
+`./run-sim-test.sh` — on headless Linux needs Xvfb + webkit2gtk-4.1 + proot (see script).
+App language: English (default); `?lang=id` switches the UI strings to Indonesian.
 
-## UX (576x288 monokrom hijau, font fixed by hardware)
-Hierarki lewat brightness 0-4: isi paling terang, header sedang, hint gestur redup.
-State lengkap: antrean, konfirmasi (dengan kutipan pesan asli), rekam suara, aksi pintar,
-digest (dengan loading), kosong, dan error kirim (bisa coba lagi).
+## Display UX (576x288 green monochrome, font fixed by hardware)
+Hierarchy via brightness levels 0-4: content brightest, header mid, gesture hints dim.
+Full state coverage: queue, confirm (with original-message quote), voice recording, smart
+action, digest (with loading), empty, and send-error (retry without losing the draft).
 
-## Privasi & keamanan
-- Isi pesan tidak disimpan (in-memory saja di backend).
-- Watchbot read-only, "bukan saran finansial".
-- Balasan dari kacamata SELALU lewat layar konfirmasi sebelum terkirim.
+## Privacy & safety
+- Message contents are never persisted (backend memory only).
+- Watchbot is read-only: "not financial advice".
+- Every reply from the glasses ALWAYS passes a confirmation screen before sending.
 
 ## Status
-Teruji di simulator resmi 0.9.5 via automation API: antrean, balas draft, suara->STT->kirim
-(HTTP end-to-end), aksi pintar, digest, error path. 0 error console.
-Menyusul: video demo, repo publik, submit (menunggu ACC pemilik).
+Tested on the official simulator 0.9.5 via its automation API: queue, draft replies,
+voice -> STT -> send (HTTP end-to-end), smart actions, digest, error path. Zero console errors.
+Coming next (each awaiting owner approval): demo video, public repo, submission.

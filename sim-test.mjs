@@ -12,13 +12,8 @@ async function input(action, wait = 600) {
 }
 for (let i = 0; i < 20; i++) { try { await fetch(BASE + '/api/ping'); break } catch { await sleep(500) } }
 await sleep(4000)
-await input('click'); await input('click'); await input('click')   // -> m4 Pak Herman (dm)
-await input('long_press', 900)
-await shot('44-voice-rec')
-await input('long_press_release', 3000)
-await shot('45-stt-result')
-await input('click', 800)          // send the transcribed reply
-await shot('46-after-voice-send')
+await shot('50-en-queue')
+await input('click'); await input('double_click'); await shot('51-en-confirm'); await input('down')
+await input('up'); await shot('52-en-reminder')   // m2 has no reminder; but swipe up on m2... m2 no day/time -> noop; go m1
 const c = JSON.parse(await (await fetch(BASE + '/api/console')).text())
-const errs = c.entries.filter(e => e.level === 'error')
-console.log('console errors:', errs.length)
+console.log('console errors:', c.entries.filter(e => e.level === 'error').length)
