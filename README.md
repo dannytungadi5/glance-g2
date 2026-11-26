@@ -72,3 +72,13 @@ Submitted to the hackathon (build 52017, under review; editable until Nov 30).
 Tested on the official simulator 0.9.5 via its automation API: queue, draft replies,
 voice -> STT -> send (HTTP end-to-end), smart actions, digest, error path. Zero console errors.
 Backend endpoint suite: `node test-backend.mjs` (17 checks, no keys needed). See TESTING.md.
+
+## Feature requests (APIs we used)
+
+Things the APIs behind Glance are missing, passed on to their teams as the hackathon invites:
+
+1. Even Hub SDK: a built-in speech-to-text option. Today the SDK gives raw microphone audio and every app must run its own STT server for voice replies.
+2. Even Hub SDK: a way to show a short, user-approved alert while another app is in the foreground. A message that matters can currently only be seen when the user opens the app.
+3. Even Hub SDK: a supported sign-in flow for web apps (Google sign-in does not work inside the WebView), for example a built-in pairing-code helper.
+4. Even Hub simulator: scripted microphone input, so voice flows can be tested end to end without glasses.
+5. Telegram Bot API: a read-only scope for a user's own chats. Bots only see direct messages and forwards, so full inbox filtering needs the Telegram user API, which Glance does not use.
