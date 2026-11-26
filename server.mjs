@@ -54,14 +54,37 @@ async function tg(method, body) {
   return j.result
 }
 
+// Original author of a forwarded message (Bot API forward_origin, legacy fields as fallback).
+// Returns null for direct messages.
+function forwardedFrom(msg) {
+  const fo = msg.forward_origin
+  if (fo) {
+    if (fo.type === 'hidden_user') return fo.sender_user_name || 'Hidden user'
+    if (fo.type === 'user' && fo.sender_user) return [fo.sender_user.first_name, fo.sender_user.last_name].filter(Boolean).join(' ') || null
+    if (fo.type === 'chat' && fo.sender_chat) return fo.sender_chat.title || null
+    if (fo.type === 'channel' && fo.chat) return fo.chat.title || null
+    return 'Unknown'
+  }
+  if (msg.forward_sender_name) return msg.forward_sender_name
+  if (msg.forward_from) return [msg.forward_from.first_name, msg.forward_from.last_name].filter(Boolean).join(' ') || null
+  if (msg.forward_from_chat) return msg.forward_from_chat.title || null
+  return null
+}
+
 function toGlance(msg) {
   const from = msg.from || {}
-  const sender = [from.first_name, from.last_name].filter(Boolean).join(' ') || from.username || 'Unknown'
+  let sender = [from.first_name, from.last_name].filter(Boolean).join(' ') || from.username || 'Unknown'
+  let chat = msg.chat.type === 'private' ? 'DM' : (msg.chat.title || msg.chat.type)
+  // Forwarded message: show the original author. The Bot API cannot read the user's
+  // inbox, so forwarding a message to the bot is how any chat reaches the glasses.
+  // Note: a reply to a forwarded card goes back to the bot DM, not the original chat.
+  const fwd = forwardedFrom(msg)
+  if (fwd) { sender = fwd; chat = 'Forwarded' }
   const t = new Date((msg.date || Date.now() / 1000) * 1000)
   const id = `tg-${msg.message_id}`
   byId.set(id, msg.chat.id)
   return {
-    id, sender, chat: msg.chat.type === 'private' ? 'DM' : (msg.chat.title || msg.chat.type),
+    id, sender, chat,
     time: t.toTimeString().slice(0, 5), vip: true, kind: msg.chat.type === 'private' ? 'dm' : 'group',
     body: String(msg.text || '').slice(0, 300),
     draftReply: 'Got it, I will get back to you in a bit.',
@@ -141,7 +164,7 @@ const server = http.createServer(async (req, res) => {
       const body = JSON.parse(await readBody(req))
       if (BOT_TOKEN && byId.has(body.id)) await tg('sendMessage', { chat_id: byId.get(body.id), text: body.text })
       console.log(`reply ${body.id}: ${String(body.text).slice(0, 60)}`)
-      return json(200, { ok: true, delivered: BOT_TOKEN && byId.has(body.id) })
+      return json(200, { ok: true, delivered: !!(BOT_TOKEN && byId.has(body.id)) })
     }
     if (req.url === '/api/stt' && req.method === 'POST') {
       const wav = await readBody(req, true)

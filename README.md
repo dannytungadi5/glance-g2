@@ -42,7 +42,19 @@ action, digest (with loading), empty, and send-error (retry without losing the d
 - Watchbot is read-only: "not financial advice".
 - Every reply from the glasses ALWAYS passes a confirmation screen before sending.
 
+## Telegram coverage, honestly
+The Bot API cannot read a user's inbox. What reaches the glasses today:
+- direct DMs to @GlanceG2_bot (full round-trip: reply from the glasses lands back in that DM)
+- any message you forward to the bot (shown with the original author, labeled "Forwarded";
+  a reply to a forwarded card goes back to your bot DM, not the original chat)
+Full inbox sync needs the Telegram user API and is on the roadmap, not claimed here.
+
 ## Status
+Submitted to the hackathon (build 52017, under review; editable until Nov 30).
+- Build page: https://dorahacks.io/build/52017
+- Demo video (2:21, official simulator, live Telegram DM round-trip): https://youtu.be/HZP22OQvlUY
+- Landing: https://glance-g2.pages.dev/
+- Packaged app (.ehpk): see GitHub Releases
 Tested on the official simulator 0.9.5 via its automation API: queue, draft replies,
 voice -> STT -> send (HTTP end-to-end), smart actions, digest, error path. Zero console errors.
-Coming next (each awaiting owner approval): demo video, public repo, submission.
+Backend endpoint suite: `node test-backend.mjs` (16 checks, no keys needed). See TESTING.md.
